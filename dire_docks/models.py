@@ -14,8 +14,18 @@ class CargoShip(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     name = models.CharField(max_length=100)
     max_idle_time = models.TimeField()
+    dock_time = models.TimeField()
+    depart_time = models.TimeField()
     max_containers = models.IntegerField()
     dock = models.ForeignKey(to=Dock, on_delete=models.PROTECT, null=True, default=None, related_name='cargo_ships')
+
+
+# TODO: Is there a more elegant way to connect objects with a conflict, but also delete the conflict if one object
+# is deleted? Currently, this solution makes it a bit tricky to query, but maybe that's OK if it's read-only
+class CargoShipConflict(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4)
+    cargo_ship_a = models.ForeignKey(to=CargoShip, on_delete=models.CASCADE, null=True, default=None, related_name='cargo_ship_a_conflict')
+    cargo_ship_b = models.ForeignKey(to=CargoShip, on_delete=models.CASCADE, null=True, default=None, related_name='cargo_ship_b_conflict')
 
 
 class Container(models.Model):
