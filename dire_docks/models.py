@@ -20,8 +20,6 @@ class CargoShip(models.Model):
     dock = models.ForeignKey(to=Dock, on_delete=models.PROTECT, null=True, default=None, related_name='cargo_ships')
 
 
-# TODO: Is there a more elegant way to connect objects with a conflict, but also delete the conflict if one object
-# is deleted? Currently, this solution makes it a bit tricky to query, but maybe that's OK if it's read-only
 class CargoShipConflict(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     cargo_ship_a = models.ForeignKey(to=CargoShip, on_delete=models.CASCADE, null=True, default=None, related_name='cargo_ship_a_conflict')

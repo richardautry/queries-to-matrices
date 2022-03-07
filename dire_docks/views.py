@@ -1,5 +1,5 @@
-from dire_docks.models import Dock, CargoShip
-from dire_docks.serializers import DockSerializer, CargoShipSerializer
+from dire_docks.models import Dock, CargoShip, CargoShipConflict
+from dire_docks.serializers import DockSerializer, CargoShipSerializer, CargoShipConflictSerializer
 from rest_framework import viewsets
 
 
@@ -8,6 +8,11 @@ class DockViewSet(viewsets.ModelViewSet):
     serializer_class = DockSerializer
 
 
-class CaroShipViewSet(viewsets.ModelViewSet):
+class CargoShipViewSet(viewsets.ModelViewSet):
     queryset = CargoShip.objects.all()
     serializer_class = CargoShipSerializer
+
+
+class CargoShipConflictViewSet(viewsets.ModelViewSet):
+    queryset = CargoShipConflict.objects.all()
+    serializer_class = CargoShipConflictSerializer
