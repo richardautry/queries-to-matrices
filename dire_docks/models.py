@@ -22,6 +22,7 @@ class CargoShip(models.Model):
 
 class CargoShipConflict(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
+    type = models.CharField(max_length=100)
     cargo_ship_a = models.ForeignKey(to=CargoShip, on_delete=models.CASCADE, null=True, default=None, related_name='cargo_ship_a_conflict')
     cargo_ship_b = models.ForeignKey(to=CargoShip, on_delete=models.CASCADE, null=True, default=None, related_name='cargo_ship_b_conflict')
 

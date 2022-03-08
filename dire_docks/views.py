@@ -4,7 +4,7 @@ from rest_framework import viewsets
 
 
 class DockViewSet(viewsets.ModelViewSet):
-    queryset = Dock.objects.all()
+    queryset = Dock.objects.all().prefetch_related("cargo_ships")
     serializer_class = DockSerializer
 
 
