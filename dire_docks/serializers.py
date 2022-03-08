@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from dire_docks.models import Dock, CargoShip, CargoShipConflict
 from django.db.models import Q
+from dire_docks.utils.matrices import CargoShipMatrix
+from dire_docks.utils.conflicts import find_conflicts
 
 
 class CargoShipConflictSerializer(serializers.ModelSerializer):
@@ -27,13 +29,25 @@ class CargoShipSerializer(serializers.ModelSerializer):
         return [CargoShipConflictSerializer(instance).data for instance in instances]
 
     def create(self, validated_data):
+        # TODO:
+        """
+        The basic idea works. Now we can think about the API/DX for `matrices.py` and `conflicts.py`
+        Additionally, we should be returning a label on the `...Conflict` object that indicates
+        what TYPE of conflict was found (or which field is causing the conflict perhaps)
+        """
         instance = super().create(validated_data)
-        # TODO: Run `find_conflicts` here and check that returned object has conflicts included
+        instance_matrix = CargoShipMatrix(instance)
+        matrices = [CargoShipMatrix(obj) for obj in CargoShip.objects.exclude(Q(dock=None) | Q(id=instance.id))]
+        find_conflicts(instance_matrix, matrices)
         return instance
 
     def update(self, instance, validated_data):
-        # TODO: Delete original conflicts and rerun `find_conflicts` here
-        return super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
+        instance_matrix = CargoShipMatrix(instance)
+        instance_matrix.delete_conflicts()
+        matrices = [CargoShipMatrix(obj) for obj in CargoShip.objects.exclude(Q(dock=None) | Q(id=instance.id))]
+        find_conflicts(instance_matrix, matrices)
+        return instance
 
     class Meta:
         model = CargoShip
@@ -50,7 +64,7 @@ class CargoShipSerializer(serializers.ModelSerializer):
 
 
 class DockSerializer(serializers.ModelSerializer):
-    cargo_ships = CargoShipSerializer(many=True)
+    cargo_ships = CargoShipSerializer(many=True, read_only=True)
 
     class Meta:
         model = Dock

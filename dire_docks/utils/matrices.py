@@ -53,7 +53,13 @@ class CargoShipMatrix(Matrix):
 
     def create_conflict(self, obj: 'CargoShipMatrix'):
         self.conflict_class.objects.create(
-            cargo_ship_a=self.instance.id,
-            cargo_ship_b=obj.instance.id
+            cargo_ship_a=self.instance,
+            cargo_ship_b=obj.instance
         )
+
+    def delete_conflicts(self):
+        conflicts = self.conflict_class.objects.filter(
+            models.Q(cargo_ship_a__id=self.instance.id) | models.Q(cargo_ship_b__id=self.instance.id)
+        )
+        conflicts.delete()
 
