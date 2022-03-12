@@ -27,6 +27,13 @@ def find_conflicts_query(cargo_ship: CargoShip):
         )
 
 
-def find_dock_time_conflicts(cargo_ship: CargoShip, queryset: QuerySet):
-    # conflicts_query = queryset.
-    pass
+def find_cargo_ship_type_conflicts(cargo_ship: CargoShip, queryset: QuerySet):
+    conflict_query = queryset.filter(type=cargo_ship.type)
+    for query_ship in conflict_query.all():
+        CargoShipConflict.objects.create(
+            type="type_conflict",
+            cargo_ship_a=cargo_ship,
+            cargo_ship_b=query_ship
+        )
+
+# TODO: Can we add MORE conflict types to simulate a larger ruleset?
