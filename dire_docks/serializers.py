@@ -2,7 +2,7 @@ from rest_framework import serializers
 from dire_docks.models import Dock, CargoShip, CargoShipConflict
 from django.db.models import Q
 from dire_docks.utils.matrices import CargoShipMatrix
-from dire_docks.utils.conflicts import find_conflicts, find_cargo_ship_type_conflicts
+from dire_docks.utils.conflicts import find_conflicts, find_conflicts_query, find_conflicts_combined
 
 
 class CargoShipConflictSerializer(serializers.ModelSerializer):
@@ -24,36 +24,33 @@ class CargoShipSerializer(serializers.ModelSerializer):
     conflicts = serializers.SerializerMethodField()
 
     def get_conflicts(self, obj):
-        return (
-            # [conflict_a.id for conflict_a in obj.cargo_ship_a_conflict.all()] +
-            # [conflict_b.id for conflict_b in obj.cargo_ship_b_conflict.all()]
-            [CargoShipConflictSerializer(conflict_a).data for conflict_a in obj.cargo_ship_a_conflict.all()] +
-            [CargoShipConflictSerializer(conflict_b).data for conflict_b in obj.cargo_ship_b_conflict.all()]
-        )
+        """
+        Get all conflicts that involve the current CargoShip
+        NOTE: Serializing conflicts slows down the response. Just ids is faster.
+        """
+        conflicts = {}
+        for conflict in list(obj.cargo_ship_a_conflict.all()) + list(obj.cargo_ship_b_conflict.all()):
+            if conflict.cargo_ship_a != obj:
+                conflict_ship_id = conflict.cargo_ship_a.id
+            else:
+                conflict_ship_id = conflict.cargo_ship_b.id
+
+            conflict_ship_id = str(conflict_ship_id)  # Convert UUID to str for serialization
+
+            if conflicts.get(conflict_ship_id):
+                conflicts[conflict_ship_id].append(conflict.type)
+            else:
+                conflicts[conflict_ship_id] = [conflict.type]
+        return conflicts
 
     def create(self, validated_data):
-        # TODO:
-        """
-        The basic idea works. Now we can think about the API/DX for `matrices.py` and `conflicts.py`
-
-        1. we should be returning a label on the `...Conflict` object that indicates
-        what TYPE of conflict was found (or which field is causing the conflict perhaps)
-
-        2. We should be using a query for some conflict detection and matrix math for others
-        Is there a speed difference?
-
-        As an example, is it better to 5 db queries to determine conflicts, or 1 query and determines conflicts
-        in memory via iteration
-        """
         instance = super().create(validated_data)
-        instance_matrix = CargoShipMatrix(instance)
         # TODO: We are likely starting with the same queryset in update and create. Where should this live?
         conflict_queryset = CargoShip.objects.filter(dock=instance.dock).exclude(id=instance.id).prefetch_related("dock")
-        matrices = [CargoShipMatrix(obj) for obj in conflict_queryset.all()]
-        # TODO: We are likely checking the same conflicts on update and create. Can we aggregate checks somewhere?
-        find_conflicts(instance_matrix, matrices)
-        find_cargo_ship_type_conflicts(cargo_ship=instance, queryset=conflict_queryset)
-        # find_conflicts_query(instance)
+        find_conflicts(cargo_ship=instance, queryset=conflict_queryset)
+        # find_conflicts_query(instance, conflict_queryset)
+        # find_conflicts_combined(instance, conflict_queryset)
+        # TODO: now, how to handle the conflicts from the requester's side?
         return instance
 
     def update(self, instance, validated_data):
