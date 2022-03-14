@@ -29,6 +29,7 @@ class CargoShip(models.Model):
     max_containers = models.IntegerField()
     type = models.CharField(choices=Type.choices, max_length=100)
     dock = models.ForeignKey(to=Dock, on_delete=models.PROTECT, null=True, default=None, related_name='cargo_ships')
+    # conflicting_cargo_ships = models.ManyToManyField(to="CargoShip", default=None)
 
 
 class CargoShipConflict(models.Model):

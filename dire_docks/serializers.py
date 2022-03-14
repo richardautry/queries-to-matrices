@@ -22,6 +22,7 @@ class CargoShipConflictSerializer(serializers.ModelSerializer):
 class CargoShipSerializer(serializers.ModelSerializer):
     dock_id = serializers.PrimaryKeyRelatedField(source='dock', queryset=Dock.objects.all(), required=False)
     conflicts = serializers.SerializerMethodField()
+    # conflicting_cargo_ships = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
 
     def get_conflicts(self, obj):
         """
@@ -73,7 +74,8 @@ class CargoShipSerializer(serializers.ModelSerializer):
             'depart_time',
             'dock_id',
             'conflicts',
-            'type'
+            'type',
+            # 'conflicting_cargo_ships'
         ]
 
 
