@@ -14,7 +14,7 @@ class DockViewSet(viewsets.ModelViewSet):
         "cargo_ships__cargo_ship_a_conflict__cargo_ship_a",
         "cargo_ships__cargo_ship_a_conflict__cargo_ship_b",
         "cargo_ships__cargo_ship_b_conflict__cargo_ship_a",
-        "cargo_ships__cargo_ship_b_conflict__cargo_ship_b"
+        # "cargo_ships__cargo_ship_b_conflict__cargo_ship_b"
     )
     serializer_class = DockSerializer
 
@@ -24,7 +24,7 @@ class CargoShipViewSet(viewsets.ModelViewSet):
     # TODO: Optimize queryset to facilitate conflict detection
     queryset = CargoShip.objects.all().prefetch_related(
         "dock",
-        "cargo_ship_a_conflict",
+        # "cargo_ship_a_conflict",
         "cargo_ship_b_conflict",
         "cargo_ship_a_conflict__cargo_ship_a",
         "cargo_ship_a_conflict__cargo_ship_b",

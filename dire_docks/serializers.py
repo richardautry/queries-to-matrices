@@ -77,6 +77,14 @@ class CargoShipSerializer(serializers.ModelSerializer):
             'type',
             # 'conflicting_cargo_ships'
         ]
+        prefetch_related_fields = [
+            "cargo_ship_a_conflict",
+            "cargo_ship_b_conflict",
+            "cargo_ship_a_conflict__cargo_ship_a",
+            "cargo_ship_a_conflict__cargo_ship_b",
+            "cargo_ship_b_conflict__cargo_ship_a",
+            "cargo_ship_b_conflict__cargo_ship_b"
+        ]
 
 
 class DockSerializer(serializers.ModelSerializer):
