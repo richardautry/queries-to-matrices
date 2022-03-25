@@ -22,4 +22,6 @@ urlpatterns = [
     path('', include(dire_docks_router.urls))
 ]
 
+# urlpatterns += dire_docks_urlpatterns
+
 urlpatterns +=[path('silk/', include('silk.urls', namespace='silk'))]

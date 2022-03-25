@@ -22,7 +22,6 @@ class CargoShipConflictSerializer(serializers.ModelSerializer):
 class CargoShipSerializer(serializers.ModelSerializer):
     dock_id = serializers.PrimaryKeyRelatedField(source='dock', queryset=Dock.objects.all(), required=False)
     conflicts = serializers.SerializerMethodField()
-    # conflicting_cargo_ships = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
 
     def get_conflicts(self, obj):
         """
@@ -30,7 +29,10 @@ class CargoShipSerializer(serializers.ModelSerializer):
         NOTE: Serializing conflicts slows down the response. Just ids is faster.
         """
         conflicts = {}
-        for conflict in list(obj.cargo_ship_a_conflict.all()) + list(obj.cargo_ship_b_conflict.all()):
+        cargo_ship_conflict_queryset = CargoShipConflict.objects.filter(
+            Q(cargo_ship_a=obj.id) | Q(cargo_ship_b=obj.id)
+        ).prefetch_related("cargo_ship_a", "cargo_ship_b")
+        for conflict in cargo_ship_conflict_queryset.all():
             if conflict.cargo_ship_a != obj:
                 conflict_ship_id = conflict.cargo_ship_a.id
             else:
@@ -49,18 +51,16 @@ class CargoShipSerializer(serializers.ModelSerializer):
         # TODO: We are likely starting with the same queryset in update and create. Where should this live?
         conflict_queryset = CargoShip.objects.filter(dock=instance.dock).exclude(id=instance.id).prefetch_related("dock")
         find_conflicts(cargo_ship=instance, queryset=conflict_queryset)
-        # find_conflicts_query(instance, conflict_queryset)
-        # find_conflicts_combined(instance, conflict_queryset)
         # TODO: now, how to handle the conflicts from the requester's side?
         return instance
 
     def update(self, instance, validated_data):
-        # TODO: To really complete this kind of demo, need to mirror conflict checks from `create` here
         instance = super().update(instance, validated_data)
-        instance_matrix = CargoShipMatrix(instance)
-        instance_matrix.delete_conflicts()
-        matrices = [CargoShipMatrix(obj) for obj in CargoShip.objects.exclude(Q(dock=None) | Q(id=instance.id))]
-        find_conflicts(instance_matrix, matrices)
+        CargoShipConflict.objects.filter(
+            Q(cargo_ship_a=instance.id) | Q(cargo_ship_b=instance.id)
+        ).prefetch_related("cargo_ship_a", "cargo_ship_b").delete()
+        conflict_queryset = CargoShip.objects.filter(dock=instance.dock).exclude(id=instance.id).prefetch_related("dock")
+        find_conflicts(cargo_ship=instance, queryset=conflict_queryset)
         return instance
 
     class Meta:
@@ -75,7 +75,6 @@ class CargoShipSerializer(serializers.ModelSerializer):
             'dock_id',
             'conflicts',
             'type',
-            # 'conflicting_cargo_ships'
         ]
         prefetch_related_fields = [
             "cargo_ship_a_conflict",

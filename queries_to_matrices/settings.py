@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'silk',
-    'dire_docks'
+    'django_filters',
+    'dire_docks',
 ]
 
 MIDDLEWARE = [
@@ -145,5 +146,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [],
-    'DEFAULT_ATHENTICATION_CLASSES': []
+    'DEFAULT_ATHENTICATION_CLASSES': [],
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    )
 }

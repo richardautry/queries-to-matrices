@@ -22,14 +22,14 @@ class CargoShip(models.Model):
         GREEN = "GREEN"
 
     id = models.UUIDField(primary_key=True, default=uuid4)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     max_idle_time = models.TimeField()
     dock_time = models.TimeField()
     depart_time = models.TimeField()
     max_containers = models.IntegerField()
     type = models.CharField(choices=Type.choices, max_length=100)
     dock = models.ForeignKey(to=Dock, on_delete=models.PROTECT, null=True, default=None, related_name='cargo_ships')
-    # conflicting_cargo_ships = models.ManyToManyField(to="CargoShip", default=None)
+    conflicting_cargo_ships = models.ManyToManyField(to="CargoShip", default=None)
 
 
 class CargoShipConflict(models.Model):
