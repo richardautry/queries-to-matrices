@@ -4,3 +4,5 @@ db.sqlite3
 static/
 
 *__pycache__
+
+*.ipynb_checkpoints
