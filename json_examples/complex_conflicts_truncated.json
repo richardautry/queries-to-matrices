@@ -1,0 +1,59 @@
+[
+    {
+        "id": "ecebc65d-2a24-4468-8b3c-7dbcf168b323",
+        "name": "CargoShipA",
+        ...
+        "conflicts": {
+            # CargoShipB
+            "160e89ff-dbe8-4808-b7f5-2ecb2e7b8331": [
+                "dock_depart_range"
+            ],
+            # CargoShipD
+            "25b8c350-8a6f-4401-a302-2c9eb7877b07": [
+                "type_conflict"  # Rule: Two cargo ships with same type can't be at same dock
+                                 # i.e. CargoShipA and CargoShipD are both type RED
+            ]
+        },
+        "type": "RED"
+    },
+    {
+        "id": "160e89ff-dbe8-4808-b7f5-2ecb2e7b8331",
+        "name": "ConflictShipB",
+        ...
+        "conflicts": {
+            # CargoShipA
+            "ecebc65d-2a24-4468-8b3c-7dbcf168b323": [
+                "dock_depart_range"
+            ],
+            # CargoShipC
+            "660102ab-624b-459e-9805-26400a86e44b": [
+                "dock_depart_range"
+            ]
+        },
+        "type": "BLUE"
+    },
+    {
+        "id": "660102ab-624b-459e-9805-26400a86e44b",
+        "name": "CargoShipC",
+        ...
+        "conflicts": {
+            # CargoShipB
+            "160e89ff-dbe8-4808-b7f5-2ecb2e7b8331": [
+                "dock_depart_range"
+            ]
+        },
+        "type": "GREEN"
+    },
+    {
+        "id": "25b8c350-8a6f-4401-a302-2c9eb7877b07",
+        "name": "CargoShipD",
+        ...
+        "conflicts": {
+            # CargoShipA
+            "ecebc65d-2a24-4468-8b3c-7dbcf168b323": [
+                "type_conflict"
+            ]
+        },
+        "type": "RED"
+    }
+]

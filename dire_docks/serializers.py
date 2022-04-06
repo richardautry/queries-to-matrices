@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from dire_docks.models import Dock, CargoShip, CargoShipConflict
 from django.db.models import Q
-from dire_docks.utils.matrices import CargoShipMatrix
-from dire_docks.utils.conflicts import find_conflicts, find_conflicts_query, find_conflicts_combined
+from dire_docks.utils.conflicts import find_conflicts
 
 
 class CargoShipConflictSerializer(serializers.ModelSerializer):
@@ -25,11 +24,19 @@ class CargoShipSerializer(serializers.ModelSerializer):
 
     def get_conflicts(self, obj):
         """
-        Get all conflicts that involve the current CargoShip
+        Get all conflicts that involve the current CargoShip and serialize as uuid: [conflict_type]
+        i.e. if two conflict types were found with another object:
+        {
+            "1234_abc...": [
+                "dock_depart_range",
+                "type_conflict"
+            ]
+        }
         NOTE: Serializing conflicts slows down the response. Just ids is faster.
         """
         conflicts = {}
         cargo_ship_conflict_queryset = CargoShipConflict.objects.filter(
+            # We need to query and prefetch both sides of the conflict relationship: a and b
             Q(cargo_ship_a=obj.id) | Q(cargo_ship_b=obj.id)
         ).prefetch_related("cargo_ship_a", "cargo_ship_b")
         for conflict in cargo_ship_conflict_queryset.all():
@@ -40,6 +47,7 @@ class CargoShipSerializer(serializers.ModelSerializer):
 
             conflict_ship_id = str(conflict_ship_id)  # Convert UUID to str for serialization
 
+            # We'll output an aggregated view of conflicts as a list of types PER object
             if conflicts.get(conflict_ship_id):
                 conflicts[conflict_ship_id].append(conflict.type)
             else:
@@ -51,7 +59,6 @@ class CargoShipSerializer(serializers.ModelSerializer):
         # TODO: We are likely starting with the same queryset in update and create. Where should this live?
         conflict_queryset = CargoShip.objects.filter(dock=instance.dock).exclude(id=instance.id).prefetch_related("dock")
         find_conflicts(cargo_ship=instance, queryset=conflict_queryset)
-        # TODO: now, how to handle the conflicts from the requester's side?
         return instance
 
     def update(self, instance, validated_data):
