@@ -5,17 +5,16 @@ from dire_docks.utils.conflicts import find_conflicts
 
 
 class CargoShipConflictSerializer(serializers.ModelSerializer):
-    cargo_ship_a_id = serializers.PrimaryKeyRelatedField(source="cargo_ship_a", read_only=True)
-    cargo_ship_b_id = serializers.PrimaryKeyRelatedField(source="cargo_ship_b", read_only=True)
+    def to_representation(self, instance):
+        if self.source == "cargo_ship_a_conflict":
+            cargo_ship_id_field = "cargo_ship_b"
+        else:
+            cargo_ship_id_field = "cargo_ship_a"
 
-    class Meta:
-        model = CargoShipConflict
-        fields = [
-            'id',
-            'type',
-            'cargo_ship_a_id',
-            'cargo_ship_b_id'
-        ]
+        return {
+            "parent_id": str(getattr(instance, cargo_ship_id_field).id),
+            "type": instance.type
+        }
 
 
 class CargoShipSerializer(serializers.ModelSerializer):
@@ -34,25 +33,16 @@ class CargoShipSerializer(serializers.ModelSerializer):
         }
         NOTE: Serializing conflicts slows down the response. Just ids is faster.
         """
-        conflicts = {}
-        cargo_ship_conflict_queryset = CargoShipConflict.objects.filter(
-            # We need to query and prefetch both sides of the conflict relationship: a and b
-            Q(cargo_ship_a=obj.id) | Q(cargo_ship_b=obj.id)
-        ).prefetch_related("cargo_ship_a", "cargo_ship_b")
-        for conflict in cargo_ship_conflict_queryset.all():
-            if conflict.cargo_ship_a != obj:
-                conflict_ship_id = conflict.cargo_ship_a.id
+        conflict_dict = {}
+        conflicts = CargoShipConflictSerializer(obj.cargo_ship_a_conflict, many=True, source="cargo_ship_a_conflict").data
+        conflicts.extend(CargoShipConflictSerializer(obj.cargo_ship_b_conflict, many=True, source="cargo_ship_b_conflict").data)
+        for conflict in conflicts:
+            # combine conflicts into aggregated dict
+            if conflict_dict.get(conflict["parent_id"]):
+                conflict_dict[conflict["parent_id"]].append(conflict["type"])
             else:
-                conflict_ship_id = conflict.cargo_ship_b.id
-
-            conflict_ship_id = str(conflict_ship_id)  # Convert UUID to str for serialization
-
-            # We'll output an aggregated view of conflicts as a list of types PER object
-            if conflicts.get(conflict_ship_id):
-                conflicts[conflict_ship_id].append(conflict.type)
-            else:
-                conflicts[conflict_ship_id] = [conflict.type]
-        return conflicts
+                conflict_dict[conflict["parent_id"]] = [conflict["type"]]
+        return conflict_dict
 
     def create(self, validated_data):
         instance = super().create(validated_data)

@@ -8,7 +8,7 @@ from django_filters import rest_framework as filters
 
 @check_prefetch_related
 class DockViewSet(viewsets.ModelViewSet):
-    queryset = Dock.objects.all().prefetch_related(
+    queryset = Dock.objects.prefetch_related(
         "cargo_ships",
         "cargo_ships__cargo_ship_a_conflict",
         "cargo_ships__cargo_ship_b_conflict",
@@ -22,20 +22,17 @@ class DockViewSet(viewsets.ModelViewSet):
 
 @check_prefetch_related
 class CargoShipViewSet(viewsets.ModelViewSet):
-    # TODO: Optimize queryset to facilitate conflict detection
-    queryset = CargoShip.objects.all().prefetch_related(
+    queryset = CargoShip.objects.prefetch_related(
         "dock",
-        "cargo_ship_a_conflict",
-        "cargo_ship_b_conflict",
         "cargo_ship_a_conflict__cargo_ship_a",
         "cargo_ship_a_conflict__cargo_ship_b",
         "cargo_ship_b_conflict__cargo_ship_a",
-        "cargo_ship_b_conflict__cargo_ship_b"
+        "cargo_ship_b_conflict__cargo_ship_b",
     )
     serializer_class = CargoShipSerializer
     filterset_class = CargoShipFilter
 
 
 class CargoShipConflictViewSet(viewsets.ModelViewSet):
-    queryset = CargoShipConflict.objects.all()
+    queryset = CargoShipConflict.objects
     serializer_class = CargoShipConflictSerializer
