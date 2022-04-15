@@ -4,6 +4,7 @@ from django.db.models import Q
 from dire_docks.utils.conflicts import find_conflicts
 
 
+# TODO: Change name of project and repo to better reflect current state.
 class CargoShipConflictSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         if self.source == "cargo_ship_a_conflict":
@@ -34,8 +35,24 @@ class CargoShipSerializer(serializers.ModelSerializer):
         NOTE: Serializing conflicts slows down the response. Just ids is faster.
         """
         conflict_dict = {}
-        conflicts = CargoShipConflictSerializer(obj.cargo_ship_a_conflict, many=True, source="cargo_ship_a_conflict").data
-        conflicts.extend(CargoShipConflictSerializer(obj.cargo_ship_b_conflict, many=True, source="cargo_ship_b_conflict").data)
+
+        conflict_a_queryset = obj.cargo_ship_a_conflict
+        conflict_b_queryset = obj.cargo_ship_b_conflict
+        if self.context['request'].method != 'GET':
+            # In the case of POST/PUT/PATCH, prefetch related objects to reduce queries
+            conflict_a_queryset = conflict_a_queryset.prefetch_related("cargo_ship_b")
+            conflict_b_queryset = conflict_b_queryset.prefetch_related("cargo_ship_a")
+
+        conflicts = CargoShipConflictSerializer(
+            conflict_a_queryset,
+            many=True,
+            source="cargo_ship_a_conflict"
+        ).data
+        conflicts.extend(CargoShipConflictSerializer(
+            conflict_b_queryset,
+            many=True,
+            source="cargo_ship_b_conflict"
+        ).data)
         for conflict in conflicts:
             # combine conflicts into aggregated dict
             if conflict_dict.get(conflict["parent_id"]):
