@@ -1,8 +1,6 @@
 import logging
 
-from rest_framework import viewsets
-from django.db.models import ForeignKey
-from typing import List
+from typing import List, Tuple
 from rest_framework.serializers import PrimaryKeyRelatedField, ModelSerializer, ListSerializer
 
 
@@ -14,6 +12,15 @@ WARNING_MSG = "WARNING: `%s` not found in prefetch_related_lookups! Query may no
 
 def get_warning_message(field_name, viewset_name, serializer_class_name):
     pass
+
+
+def get_parsed_nested_lookups(prefetch_related_lookups: Tuple[str]):
+    extracted_field_names = []
+    for lookup in prefetch_related_lookups:
+        for field_name in lookup.split("__"):
+            if field_name not in extracted_field_names:
+                extracted_field_names.append(field_name)
+    return extracted_field_names
 
 
 def check_all_prefetch_related_names(
@@ -38,7 +45,10 @@ def check_all_prefetch_related_names(
             )
             if declared_field_name not in found_related_names:
                 found_related_names.append(declared_field_name)
-                if declared_field_name not in prefetch_related_lookups:
+                if (
+                        declared_field_name not in prefetch_related_lookups and
+                        declared_field_name not in get_parsed_nested_lookups(prefetch_related_lookups)
+                ):
                     logger.warning(WARNING_MSG, declared_field_name)
     if prefetch_related_name:
         prefetch_related_prefix = prefetch_related_name

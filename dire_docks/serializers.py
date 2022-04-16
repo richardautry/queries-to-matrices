@@ -32,7 +32,6 @@ class CargoShipSerializer(serializers.ModelSerializer):
                 "type_conflict"
             ]
         }
-        NOTE: Serializing conflicts slows down the response. Just ids is faster.
         """
         conflict_dict = {}
 
@@ -91,8 +90,6 @@ class CargoShipSerializer(serializers.ModelSerializer):
             'type',
         ]
         prefetch_related_fields = [
-            "cargo_ship_a_conflict",
-            "cargo_ship_b_conflict",
             "cargo_ship_a_conflict__cargo_ship_a",
             "cargo_ship_a_conflict__cargo_ship_b",
             "cargo_ship_b_conflict__cargo_ship_a",
