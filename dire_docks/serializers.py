@@ -4,7 +4,6 @@ from django.db.models import Q
 from dire_docks.utils.conflicts import find_conflicts
 
 
-# TODO: Change name of project and repo to better reflect current state.
 class CargoShipConflictSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         if self.source == "cargo_ship_a_conflict":
@@ -62,7 +61,6 @@ class CargoShipSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instance = super().create(validated_data)
-        # TODO: We are likely starting with the same queryset in update and create. Where should this live?
         conflict_queryset = CargoShip.objects.filter(dock=instance.dock).exclude(id=instance.id).prefetch_related("dock")
         find_conflicts(cargo_ship=instance, queryset=conflict_queryset)
         return instance
